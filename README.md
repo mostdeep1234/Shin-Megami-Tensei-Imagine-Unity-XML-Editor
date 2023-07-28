@@ -19,4 +19,7 @@ This tool is to preview XML from the Client Binary Data for Shin Megami Tensei :
 
 # Installation - Setup (For User)
 
-1. We are working on it
+1. Download the Program from this link
+   https://www.mediafire.com/file/6pl9b5hifwoqfga/smt+imagine+xml+editor+0.0.5.rar/file
+2. Extract the rar to the directory
+3. Follow the Readme that has been included in there
