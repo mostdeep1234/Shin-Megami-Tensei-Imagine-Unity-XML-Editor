@@ -3,10 +3,25 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+using UnityEngine.SceneManagement;
+
 using Newtonsoft.Json.Linq;
 
 public class EnchantWindow : MonoBehaviour
 {
+    public enum SoulTarot
+    {
+        soul, tarot
+    };
+
+    [Header("Tarot Window")]
+    public GameObject tarotWindow;
+
+    [Header("Soul Window")]
+    public GameObject soulWindow;
+
+    public SoulTarot soulTarot;
+
     [System.Serializable]
     public class EnchantTexts
     {
@@ -82,6 +97,11 @@ public class EnchantWindow : MonoBehaviour
 
     public TarotTexts tarotTexts = new TarotTexts();
 
+    private void OnEnable()
+    {
+        JSONConvertrManager.JSONConverterCentral.loadingWindow.SetActive(false);
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -113,12 +133,44 @@ public class EnchantWindow : MonoBehaviour
         tarotTexts.tokusei1.onEndEdit.AddListener(delegate { TarotTokusei1OnEndEdit(); });
 
         tarotTexts.tokusei2.onEndEdit.AddListener(delegate { TarotTokusei2OnEndEdit(); });
+
+        ///SOUL INPUT FIELD
+        soulTexts.name.onEndEdit.AddListener(delegate { SoulNameOnEndEdit(); });
+
+        soulTexts.desc.onEndEdit.AddListener(delegate { SoulNameOnEndEdit(); });
+
+        soulTexts.equipLevel.onEndEdit.AddListener(delegate { SoulEquipLevelOnEndEdit(); });
+
+        soulTexts.difficulty.onEndEdit.AddListener(delegate { SoulDifficultyOnEndEdit(); });
+
+        soulTexts.equipTypes.onEndEdit.AddListener(delegate { SoulEquipTypesOnEndEdit(); });
+
+        soulTexts.tokusei1.onEndEdit.AddListener(delegate { SoulTokuse1OnEndEdit(); });
+
+        soulTexts.tokusei2.onEndEdit.AddListener(delegate { SoulTokusei2OnEndEdit(); });
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+        SoulTarotManager();
+    }
+
+    void SoulTarotManager ()
+    {
+        switch(soulTarot)
+        {
+            case SoulTarot.tarot:
+                tarotWindow.SetActive(true);
+                soulWindow.SetActive(false);
+                break;
+            case SoulTarot.soul:
+                tarotWindow.SetActive(false);
+                soulWindow.SetActive(true);
+                break;
+        }
+
+        return;
     }
 
     IEnumerator Setup ()
@@ -144,6 +196,15 @@ public class EnchantWindow : MonoBehaviour
         tarotTexts.equipTypes.text = JSONConvertrManager.JSONConverterCentral.tarotProperties.equipTypes;
         tarotTexts.tokusei1.text = JSONConvertrManager.JSONConverterCentral.tarotProperties.tokusei1;
         tarotTexts.tokusei2.text = JSONConvertrManager.JSONConverterCentral.tarotProperties.tokusei2;
+
+        //soul
+        soulTexts.name.text = JSONConvertrManager.JSONConverterCentral.soulProperties.name;
+        soulTexts.desc.text = JSONConvertrManager.JSONConverterCentral.soulProperties.desc;
+        soulTexts.equipLevel.text = JSONConvertrManager.JSONConverterCentral.soulProperties.equipLevel;
+        soulTexts.difficulty.text = JSONConvertrManager.JSONConverterCentral.soulProperties.difficulty;
+        soulTexts.equipTypes.text = JSONConvertrManager.JSONConverterCentral.soulProperties.equipTypes;
+        soulTexts.tokusei1.text = JSONConvertrManager.JSONConverterCentral.soulProperties.tokusei1;
+        soulTexts.tokusei2.text = JSONConvertrManager.JSONConverterCentral.soulProperties.tokusei2;
 
         yield break;
     }
@@ -200,7 +261,6 @@ public class EnchantWindow : MonoBehaviour
 
     public void TarotEquipLevelOnEndEdit ()
     {
-
         JSONConvertrManager.JSONConverterCentral.parsed["objects"]["object"][JSONConvertrManager.JSONConverterCentral.currentIndex]["member"][1]["object"]["member"][4]["object"]["member"][2]["#text"] = tarotTexts.equipLevel.text;
 
         return;
@@ -232,7 +292,60 @@ public class EnchantWindow : MonoBehaviour
         JSONConvertrManager.JSONConverterCentral.parsed["objects"]["object"][JSONConvertrManager.JSONConverterCentral.currentIndex]["member"][1]["object"]["member"][4]["object"]["member"][5]["element"][1]= tarotTexts.tokusei2.text;
 
         return;
-    }    
+    }
+
+    #endregion
+
+    #region SOUL DELEGATION METHOD
+    public void SoulNameOnEndEdit ()
+    {
+        JSONConvertrManager.JSONConverterCentral.parsed["objects"]["object"][JSONConvertrManager.JSONConverterCentral.currentIndex]["member"][1]
+            ["object"]["member"][5]["object"]["member"][0]["#cdata-section"] = soulTexts.name.text;
+
+        return;
+    }
+    public void SoulDescOnEndEdit ()
+    {
+        JSONConvertrManager.JSONConverterCentral.parsed["objects"]["object"][JSONConvertrManager.JSONConverterCentral.currentIndex]["member"][1]
+            ["object"]["member"][5]["object"]["member"][1]["#cdata-section"] = soulTexts.desc.text;
+
+        return;
+    }
+    public void SoulEquipLevelOnEndEdit ()
+    {
+        JSONConvertrManager.JSONConverterCentral.parsed["objects"]["object"][JSONConvertrManager.JSONConverterCentral.currentIndex]["member"][1]
+            ["object"]["member"][5]["object"]["member"][2]["#text"] = soulTexts.equipLevel.text;
+
+        return;
+    }
+    public void SoulDifficultyOnEndEdit ()
+    {
+        JSONConvertrManager.JSONConverterCentral.parsed["objects"]["object"][JSONConvertrManager.JSONConverterCentral.currentIndex]["member"][1]
+            ["object"]["member"][5]["object"]["member"][3]["#text"] = soulTexts.difficulty.text;
+
+        return;
+    }
+    public void SoulEquipTypesOnEndEdit ()
+    {
+        JSONConvertrManager.JSONConverterCentral.parsed["objects"]["object"][JSONConvertrManager.JSONConverterCentral.currentIndex]["member"][1]
+            ["object"]["member"][5]["object"]["member"][4]["#text"] = soulTexts.equipTypes.text;
+
+        return;
+    }
+    public void SoulTokuse1OnEndEdit ()
+    {
+        JSONConvertrManager.JSONConverterCentral.parsed["objects"]["object"][JSONConvertrManager.JSONConverterCentral.currentIndex]["member"][1]
+            ["object"]["member"][5]["object"]["member"][5]["element"][0] = soulTexts.tokusei1.text;
+
+        return;
+    }
+    public void SoulTokusei2OnEndEdit ()
+    {
+        JSONConvertrManager.JSONConverterCentral.parsed["objects"]["object"][JSONConvertrManager.JSONConverterCentral.currentIndex]["member"][1]
+           ["object"]["member"][5]["object"]["member"][5]["element"][1] = soulTexts.tokusei2.text;
+
+        return;
+    }
 
     #endregion
 
@@ -256,6 +369,27 @@ public class EnchantWindow : MonoBehaviour
         JSONConvertrManager.JSONConverterCentral.PreviewJsonDataManager(JSONConvertrManager.JSONConverterCentral.jsonOutput);
 
         StartCoroutine(Setup());
+
+        return;
+    }
+
+    public void RightPhase ()
+    {
+        if(soulTarot == SoulTarot.tarot)soulTarot = SoulTarot.soul;
+        
+        return;
+    }
+
+    public void LeftPhase ()
+    {
+        if(soulTarot == SoulTarot.soul)soulTarot = SoulTarot.tarot;
+
+        return;
+    }
+
+    public void EnchantWindowBack ()
+    {
+        SceneManager.LoadScene(0);
 
         return;
     }

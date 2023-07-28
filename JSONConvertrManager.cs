@@ -4,6 +4,7 @@ using UnityEngine;
 using System.IO;
 using System.Text;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 using Newtonsoft.Json.Linq;
 
@@ -17,7 +18,7 @@ public class JSONConvertrManager : MonoBehaviour
 
     string jsonText;
 
-    [HideInInspector] 
+    [HideInInspector]
     public string jsonOutput;
 
     string testText;
@@ -32,12 +33,15 @@ public class JSONConvertrManager : MonoBehaviour
 
     public Text currentXMLText;
 
-    bool convert;
+    [HideInInspector] public bool convert;
 
     public int currentIndex;
 
     [HideInInspector]
     public Newtonsoft.Json.Linq.JObject parsed;
+
+    [Header("Loading Window")]
+    public GameObject loadingWindow;
 
     [Header("Controller Object")]
     public GameObject controllerObject;
@@ -52,7 +56,7 @@ public class JSONConvertrManager : MonoBehaviour
 
     public enum XMLState
     {
-        CSkill , Enchant
+        CSkill, Enchant
     };
 
     public class CSkillProperties
@@ -79,7 +83,7 @@ public class JSONConvertrManager : MonoBehaviour
 
         public string usageID;
 
-       
+
     }
 
     public class TarotProperties
@@ -134,6 +138,13 @@ public class JSONConvertrManager : MonoBehaviour
 
     public XMLState xmlState;
 
+    private void OnEnable()
+    {
+        parsed = null;
+
+        loadingWindow.SetActive(false);
+    }
+
     private void Awake()
     {
         JSONConverterCentral = this;
@@ -154,29 +165,31 @@ public class JSONConvertrManager : MonoBehaviour
     /// <summary>
     /// assign the operation in the button
     /// </summary>
-    public void SetXmlState ()
+    public void SetXmlState()
     {
         try
         {
             switch (xmlState)
             {
                 case XMLState.CSkill:
+                    loadingWindow.SetActive(false);
                     if (convert == false) ChangeState("cskill.xml", "CSkillData.json");
                     break;
                 case XMLState.Enchant:
+                    loadingWindow.SetActive(true);
                     if (convert == false) ChangeState("EnchantData.xml", "EnchantData.json");
                     break;
             }
         }
         catch
         {
-            
+
         }
 
         return;
     }
 
-    public void ChangeXML ()
+    public void ChangeXML()
     {
         slide++;
 
@@ -185,7 +198,7 @@ public class JSONConvertrManager : MonoBehaviour
         return;
     }
 
-    public void SlideCheck ()
+    public void SlideCheck()
     {
         switch (slide)
         {
@@ -202,57 +215,47 @@ public class JSONConvertrManager : MonoBehaviour
         return;
     }
 
-    public void ChangeState (string xmlname , string jsonname)
+    public void ChangeState(string xmlname, string jsonname)
     {
         buttonUI.enabled = false;
 
-        inputNameFile = xmlname;
-
         jsonOutputFilename = jsonname;
 
-        string cskillXml = Path.Combine(currentDirectory, inputNameFile);
+        string xmlPath = Path.Combine(currentDirectory, xmlname);
 
-        JsonConvert(cskillXml, jsonOutputFilename);
+        JsonConvert(xmlPath, jsonOutputFilename);
 
         return;
     }
 
-    public void JsonConvert (string xmlPath, string jsonOutputFileNameParams)
+    public void JsonConvert(string xmlPath, string jsonOutputFileNameParams)
     {
         //reset value
         convert = true;
 
         //write file into the directory
-        jsonOutput = Path.Combine(currentDirectory,jsonOutputFileNameParams);
+        jsonOutput = Path.Combine(currentDirectory, jsonOutputFileNameParams);
 
-        //if still no output
-        if(!File.Exists(jsonOutput))
-        {
-            //creaete xml instance
-            XmlDocument xml = new XmlDocument();
+        //create xml instance
+        XmlDocument xml = new XmlDocument();
 
-            //load xmls 
-            xml.Load(xmlPath);
+        //load xmls 
+        xml.Load(xmlPath);
 
-            //convert xml to json
-            jsonText = Newtonsoft.Json.JsonConvert.SerializeXmlNode(xml);
+        //convert xml to json
+        jsonText = Newtonsoft.Json.JsonConvert.SerializeXmlNode(xml);
 
-            //write to the files directory
-            File.WriteAllText(jsonOutput, jsonText);
+        //overwrite to the files directory
+        File.WriteAllText(jsonOutput, jsonText);
 
-            //do nothing
-            StartCoroutine(PreviewJsonData());
-        }
-        else
-        {
-            //do nothing
-            StartCoroutine(PreviewJsonData());
-        }
+        //do nothing
+        StartCoroutine(PreviewJsonData());
+
 
         return;
     }
 
-    IEnumerator PreviewJsonData ()
+    IEnumerator PreviewJsonData()
     {
         yield return new WaitUntil(() => jsonOutput != null);
 
@@ -265,9 +268,9 @@ public class JSONConvertrManager : MonoBehaviour
         yield break;
     }
 
-    public void PreviewJsonDataManager (string JSON)
+    public void PreviewJsonDataManager(string JSON)
     {
-        switch(xmlState)
+        switch (xmlState)
         {
             case XMLState.CSkill:
                 try
@@ -295,6 +298,8 @@ public class JSONConvertrManager : MonoBehaviour
                         cSkillParserObject.SetActive(true);
 
                         controllerObject.SetActive(false);
+
+                        convert = false;
                     }
                     else
                     {
@@ -317,11 +322,17 @@ public class JSONConvertrManager : MonoBehaviour
                         cSkillParserObject.SetActive(true);
 
                         controllerObject.SetActive(false);
+
+                        convert = false;
                     }
                 }
                 catch
                 {
+                    //reset parse
+                    parsed = null;
 
+                    //reset the convert
+                    convert = false;
                 }
                 break;
             case XMLState.Enchant:
@@ -351,8 +362,7 @@ public class JSONConvertrManager : MonoBehaviour
                         JObject tarotEquipLevel = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][4]["object"]["member"][2];
                         JObject tarotDifficulty = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][4]["object"]["member"][3];
                         JObject tarotEquipTypes = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][4]["object"]["member"][4];
-                        JObject tarotTokusei1 = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][4]["object"]["member"][5];
-                        JObject tarotTokusei2 = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][4]["object"]["member"][5];
+                        JObject tarotTokusei = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][4]["object"]["member"][5];
 
 
                         tarotProperties.name = (string)tarotName["#cdata-section"].ToString();
@@ -365,13 +375,42 @@ public class JSONConvertrManager : MonoBehaviour
 
                         tarotProperties.equipTypes = (string)tarotEquipTypes["#text"].ToString();
 
-                        string arrTokuseiJson = (string)tarotTokusei1["element"].ToString();
+                        string arrTokuseiJson = (string)tarotTokusei["element"].ToString();
 
                         JArray arrTokuseiJsonParsed = JArray.Parse(arrTokuseiJson);
 
                         tarotProperties.tokusei1 = (string)arrTokuseiJsonParsed[0].ToString();
 
                         tarotProperties.tokusei2 = (string)arrTokuseiJsonParsed[1].ToString();
+
+                        ////////////////////////////////////////////////////////////////////////
+                        ///SOUL
+                        JObject soulName = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][5]["object"]["member"][0];
+                        JObject soulDesc = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][5]["object"]["member"][1];
+                        JObject soulEquipLevel = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][5]["object"]["member"][2];
+                        JObject soulDifficulty = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][5]["object"]["member"][3];
+                        JObject soulEquipTypes = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][5]["object"]["member"][4];
+                        JObject soulTokusei = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][5]["object"]["member"][5];
+
+                        soulProperties.name = (string)soulName["#cdata-section"].ToString();
+
+                        soulProperties.desc = (string)soulDesc["#cdata-section"].ToString();
+
+                        soulProperties.equipLevel = (string)soulEquipLevel["#text"].ToString();
+
+                        soulProperties.difficulty = (string)soulDifficulty["#text"].ToString();
+
+                        soulProperties.equipTypes = (string)soulEquipTypes["#text"].ToString();
+
+                        string arrTokuseiJsonSoul = (string)soulTokusei["element"].ToString();
+
+                        JArray arrTokuseiJsonParsedSoul = JArray.Parse(arrTokuseiJson);
+
+                        soulProperties.tokusei1 = (string)arrTokuseiJsonParsedSoul[0].ToString();
+
+                        soulProperties.tokusei2 = (string)arrTokuseiJsonParsedSoul[1].ToString();
+
+                        ////////////////////////////////////////////////////////////////////////
 
 
                         ////////////////////////////////////////////////////////////////////////////////////////
@@ -389,6 +428,8 @@ public class JSONConvertrManager : MonoBehaviour
                         enchantParserObject.SetActive(true);
 
                         controllerObject.SetActive(false);
+
+                        convert = false;
                     }
                     else
                     {
@@ -411,8 +452,7 @@ public class JSONConvertrManager : MonoBehaviour
                         JObject tarotEquipLevel = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][4]["object"]["member"][2];
                         JObject tarotDifficulty = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][4]["object"]["member"][3];
                         JObject tarotEquipTypes = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][4]["object"]["member"][4];
-                        JObject tarotTokusei1 = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][4]["object"]["member"][5];
-                        JObject tarotTokusei2 = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][4]["object"]["member"][5];
+                        JObject tarotTokusei = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][4]["object"]["member"][5];
 
 
                         tarotProperties.name = (string)tarotName["#cdata-section"].ToString();
@@ -425,7 +465,7 @@ public class JSONConvertrManager : MonoBehaviour
 
                         tarotProperties.equipTypes = (string)tarotEquipTypes["#text"].ToString();
 
-                        string arrTokuseiJson = (string)tarotTokusei1["element"].ToString();
+                        string arrTokuseiJson = (string)tarotTokusei["element"].ToString();
 
                         JArray arrTokuseiJsonParsed = JArray.Parse(arrTokuseiJson);
 
@@ -434,7 +474,33 @@ public class JSONConvertrManager : MonoBehaviour
                         tarotProperties.tokusei2 = (string)arrTokuseiJsonParsed[1].ToString();
 
                         ////////////////////////////////////////////////////////////////////////
+                        ///SOUL
+                        JObject soulName = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][5]["object"]["member"][0];
+                        JObject soulDesc = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][5]["object"]["member"][1];
+                        JObject soulEquipLevel = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][5]["object"]["member"][2];
+                        JObject soulDifficulty = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][5]["object"]["member"][3];
+                        JObject soulEquipTypes = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][5]["object"]["member"][4];
+                        JObject soulTokusei = (JObject)parsed["objects"]["object"][currentIndex]["member"][1]["object"]["member"][5]["object"]["member"][5];
 
+                        soulProperties.name = (string)soulName["#cdata-section"].ToString();
+
+                        soulProperties.desc = (string)soulDesc["#cdata-section"].ToString();
+
+                        soulProperties.equipLevel = (string)soulEquipLevel["#text"].ToString();
+
+                        soulProperties.difficulty = (string)soulDifficulty["#text"].ToString();
+
+                        soulProperties.equipTypes = (string)soulEquipTypes["#text"].ToString();
+
+                        string arrTokuseiJsonSoul = (string)soulTokusei["element"].ToString();
+
+                        JArray arrTokuseiJsonParsedSoul = JArray.Parse(arrTokuseiJson);
+
+                        soulProperties.tokusei1 = (string)arrTokuseiJsonParsedSoul[0].ToString();
+
+                        soulProperties.tokusei2 = (string)arrTokuseiJsonParsedSoul[1].ToString();
+
+                        ////////////////////////////////////////////////////////////////////////
                         enchantProperties.crystalNameID = CrystalID["#text"].ToString();
 
                         enchantProperties.demonID = DemonID["#text"].ToString();
@@ -448,24 +514,30 @@ public class JSONConvertrManager : MonoBehaviour
                         enchantParserObject.SetActive(true);
 
                         controllerObject.SetActive(false);
+
+                        convert = false;
                     }
                 }
                 catch
                 {
+                    //reset parse
+                    parsed = null;
 
+                    //reset the convert
+                    convert = false;
                 }
                 break;
         }
 
-      
-       
+
+
 
         return;
     }
 
-    public void ConvertXmlBack ()
+    public void ConvertXmlBack()
     {
-        if(parsed != null && Application.platform == RuntimePlatform.WindowsPlayer)
+        if (parsed != null && Application.platform == RuntimePlatform.WindowsPlayer)
         {
             //change json
             jsonText = parsed.ToString();
@@ -491,14 +563,11 @@ public class JSONConvertrManager : MonoBehaviour
                     break;
             }
 
-            //reset parse
-            parsed = null;
-
-            //reset the convert
-            convert = false;
+            //reset the scene
+            SceneManager.LoadScene(0);
         }
 
-        
+
 
         return;
     }

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+using UnityEngine.SceneManagement;
+
 public class CSkillWindow : MonoBehaviour
 {
     [System.Serializable]
@@ -25,6 +27,11 @@ public class CSkillWindow : MonoBehaviour
     }
 
     public Texts texts = new Texts();
+
+    private void OnEnable()
+    {
+        JSONConvertrManager.JSONConverterCentral.loadingWindow.SetActive(false);
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -88,18 +95,9 @@ public class CSkillWindow : MonoBehaviour
         return;
     }
 
-    public void AddFromThisData ()
-    {
-
-
-        return;
-    }
-
     public void BackToInitalizeWindow ()
     {
-        JSONConvertrManager.JSONConverterCentral.controllerObject.SetActive(true);
-
-        this.gameObject.SetActive(false);
+        SceneManager.LoadScene(0);
 
         return;
     }
